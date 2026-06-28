@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Règles — Intrigues & Couronne{% endblock %}
+{% block body %}
+<div class="page-regles">
+  <a class="retour-accueil" href="{{ url_for('index') }}">← Retour à la Cour</a>
+  <h1>Intrigues <span style="color:var(--sceau); font-style:italic;">&amp;</span> Couronne</h1>
+  <p class="accueil-soustitre">Livre des Règles Officielles — Version Alpha-0.2 (corrigée)</p>
+
+  <p>Bienvenue à la Cour, conseiller. Dans <strong>Intrigues &amp; Couronne</strong>, la frontière entre le dévouement et la haute trahison n'est dictée que par votre ambition. Ce jeu de société politique et semi-coopératif oppose des ministres aux rôles fixes et asymétriques, arbitrés par un Roi. Votre but&nbsp;? Finir la partie avec la plus grande puissance politique sans faire sombrer le Royaume dans l'anarchie ou la faillite collective.</p>
+
+  <h2>1. Les Conditions de Victoire et de Défaite</h2>
+  <p>Le Royaume possède deux jauges globales suivies publiquement sur le plateau&nbsp;: la <strong>Stabilité du Royaume</strong> (de 0 à 100) et les <strong>Caisses de l'État</strong> (Or public).</p>
+
+  <div class="encart-avertissement">
+    <strong>⚠ La Ruine Collective&nbsp;:</strong> Si à la fin d'un cycle, la Stabilité atteint 0 (révolte populaire) ou si les Caisses de l'État tombent en dessous de zéro (banqueroute), le Royaume s'effondre. <strong>Tous les joueurs perdent immédiatement la partie.</strong>
+  </div>
+
+  <p>Si le Royaume survit au terme des 5 cycles (années), le décompte des points a lieu. Le joueur ayant le score de <strong>Puissance Politique</strong> le plus élevé est déclaré vainqueur.</p>
+  <p style="text-align:center; font-style:italic; font-size:1.1rem; margin:1.4em 0;">Puissance = Or Personnel + Influence Accumulée + (Statut de Ministère × Stabilité Finale)</p>
+  <p class="texte-discret">Le Roi ne participe pas à ce calcul : il n'a ni or personnel, ni influence, ni statut de ministère. Son rôle est exclusivement arbitral.</p>
+
+  <h2>2. La Dynamique Cognitive &amp; La Charge de Travail</h2>
+  <p>Ici, aucune jauge artificielle ne limite vos actions. Le jeu est conçu pour générer une véritable charge mentale. Les informations circulent par des canaux secrets, les crises s'accumulent sous forme de cartes d'événements, et les demandes d'aide fusent. Si vous fermez un robinet trop longtemps pour faire chanter vos rivaux, vous serez submergé par les dossiers non résolus et la colère du Roi, vous poussant inévitablement à l'erreur ou à la démission.</p>
+
+  <h2>3. Le Roi — l'Arbitre de la Couronne</h2>
+  <p>Avant toute chose&nbsp;: <strong>le Roi est un rôle à part entière</strong>, distinct des cinq ministères. Il est désigné au début de la partie (par tirage ou par accord entre les joueurs) et ne change pas en cours de jeu, sauf accord explicite de la table.</p>
+  <ul>
+    <li><strong>Il ne possède aucun robinet</strong> : il ne produit ni Or, ni Stabilité, ni Influence par lui-même.</li>
+    <li>Il reçoit les rapports de crise du Ministre de l'Intérieur et en prend connaissance avant le reste de la table.</li>
+    <li>Il possède le <strong>pouvoir de révocation</strong> (voir section 5) : il peut destituer un ministre suspecté de trahison ou d'incompétence à tout moment.</li>
+    <li>Il ne compte jamais dans le calcul de la Puissance Politique finale — il ne peut donc pas gagner la partie, mais il perd avec tout le monde en cas de Ruine Collective.</li>
+  </ul>
+
+  <h2>4. Les Ministères et Leurs Vannes (« Les Robinets »)</h2>
+  <p>Chaque ministre incarne un rôle fixe tout au long de la partie. Chaque rôle contrôle un flux indispensable et peut s'enrichir ou saboter selon deux voies : la Voie du Serviteur ou la Voie du Fourbe.</p>
+
+  <h3>📜 Le Ministre de l'Intérieur</h3>
+  <p><strong>Le Flux&nbsp;:</strong> L'Information et les Rapports de Crise. Il est le seul à piocher et lire le contenu réel des cartes d'événements du Royaume avant de les remonter au Roi.</p>
+  <p><strong>Voie du Serviteur&nbsp;:</strong> communiquer fidèlement les crises, étouffer les rumeurs et stabiliser le peuple en échange de gratifications royales.</p>
+  <p><strong>Voie du Fourbe&nbsp;:</strong> falsifier les rapports, revendre les informations secrètes ou accepter des pots-de-vin pour embellir le bilan d'un autre ministre.</p>
+
+  <h3>🏛️ Le Surintendant des Finances</h3>
+  <p><strong>Le Flux&nbsp;:</strong> L'Or Public et les Investissements. Il valide et distribue les fonds nécessaires aux actions de tous les autres ministères.</p>
+  <p><strong>Voie du Serviteur&nbsp;:</strong> faire fructifier les caisses par des investissements sains, déclenchant des Primes de Performance étatiques.</p>
+  <p><strong>Voie du Fourbe&nbsp;:</strong> créer des lignes budgétaires fictives, prélever des taxes abusives non déclarées pour remplir sa cassette personnelle.</p>
+
+  <h3>⛪ Le Grand Aumônier</h3>
+  <p><strong>Le Flux&nbsp;:</strong> La Légitimité et la Ferveur Populaire. Il contrôle l'absolution morale et l'humeur spirituelle des masses.</p>
+  <p><strong>Voie du Serviteur&nbsp;:</strong> bénir les décrets, calmer les grognes paysannes par la foi, ce qui maintient la Stabilité générale.</p>
+  <p><strong>Voie du Fourbe&nbsp;:</strong> accuser ses rivaux d'hérésie pour bloquer leurs décrets, et monnayer de lourdes indulgences en or personnel.</p>
+
+  <h3>🌾 Le Grand Maître des Subsistances</h3>
+  <p><strong>Le Flux&nbsp;:</strong> Le Ravitaillement et la Logistique. Il gère les greniers à blé et les convois indispensables à tout mouvement d'envergure.</p>
+  <p><strong>Voie du Serviteur&nbsp;:</strong> assurer la distribution de nourriture dans les provinces, générant des rentes commerciales passives et stables.</p>
+  <p><strong>Voie du Fourbe&nbsp;:</strong> stocker et spéculer sur le grain en période de disette pour faire exploser les prix au marché noir.</p>
+
+  <h3>🛡️ Le Connétable</h3>
+  <p><strong>Le Flux&nbsp;:</strong> La Maréchaussée et l'Exécution des Ordres. Il commande la garde royale et assure la sécurité physique à la cour.</p>
+  <p><strong>Voie du Serviteur&nbsp;:</strong> protéger les ministres des complots extérieurs et exécuter promptement les décrets d'arrestation du Roi.</p>
+  <p><strong>Voie du Fourbe&nbsp;:</strong> fermer les yeux sur les tentatives de vol ou d'assassinat entre ministres en échange d'une commission.</p>
+
+  <h2>5. Le Pouvoir Royal : Révocation &amp; Démission</h2>
+  <p>Le Roi possède le pouvoir absolu de destituer un ministre s'il le soupçonne de trahison ou d'incompétence, afin de nommer un autre joueur à sa place.</p>
+
+  <div class="encart-avertissement">
+    <strong>💥 L'Arme de la Démission (corrigée)&nbsp;:</strong> à tout moment, un ministre acculé par les dettes ou refusant de payer une crise sur ses deniers personnels peut annoncer sa <strong>Démission</strong>. Contrairement à une rumeur répandue, sa charge de travail <strong>n'est pas répartie entre tous les autres joueurs</strong>&nbsp;: elle est intégralement transférée à <strong>une seule personne désignée</strong> par le ministre démissionnaire (ou par consensus de la table), qui devient le nouveau titulaire du poste. Cette personne ne peut jamais être le Roi. Si tous les autres joueurs ont déjà un portefeuille, le successeur désigné <strong>cumule temporairement les deux postes</strong> jusqu'à ce qu'un nouvel arrangement soit trouvé.
+  </div>
+
+  <p class="texte-discret">Ce chaos logistique reste un puissant moyen de pression&nbsp;: charger un seul successeur de deux portefeuilles à la fois le place dans une position délicate, faisant de la démission un chantage redoutable même sous sa forme corrigée.</p>
+
+  <h2>6. Jouer en Effectif Réduit</h2>
+  <p>Intrigues &amp; Couronne se joue de <strong>3 à 6 joueurs</strong> (Roi inclus). Le nombre de ministères actifs dépend de l'effectif&nbsp;:</p>
+
+  <table class="tableau-scores" style="margin-top:1em;">
+    <thead>
+      <tr><th>Joueurs (Roi inclus)</th><th>Ministères actifs</th><th>Joueurs « libres »</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>3</td><td>2 (tirés au sort parmi les 5)</td><td>0</td></tr>
+      <tr><td>4</td><td>3 (tirés au sort parmi les 5)</td><td>0</td></tr>
+      <tr><td>5</td><td>3 (tirés au sort parmi les 5)</td><td>1</td></tr>
+      <tr><td>6</td><td>4 (tirés au sort parmi les 5)</td><td>1</td></tr>
+      <tr><td>7+</td><td>5 (tous actifs)</td><td>reste</td></tr>
+    </tbody>
+  </table>
+
+  <div class="encart-info">
+    <strong>ℹ️ À propos du tirage&nbsp;:</strong> les ministères actifs sont tirés <strong>aléatoirement</strong> parmi les cinq possibles à chaque nouvelle partie. À 3 joueurs par exemple, vous pourriez très bien jouer une partie « Finances + Connétable » et la suivante « Aumônier + Subsistances » — chaque configuration change radicalement l'équilibre des flux du Royaume.
+  </div>
+
+  <p>Quand l'effectif le permet (5 joueurs et plus), un ou plusieurs joueurs restent volontairement <strong>sans portefeuille</strong> au démarrage. Ils participent pleinement aux discussions et peuvent devenir, à tout moment, le successeur désigné d'un ministre démissionnaire ou révoqué — un rôle d'attente qui n'a rien de passif&nbsp;!</p>
+
+  <h2>7. Déroulement d'un Cycle</h2>
+  <ol>
+    <li><strong>Discussion libre&nbsp;:</strong> les joueurs négocient, complotent, s'accusent.</li>
+    <li><strong>Décision simultanée&nbsp;:</strong> chaque ministre choisit en secret d'Ouvrir ou de Fermer son robinet.</li>
+    <li><strong>Rapport de crise&nbsp;:</strong> le Ministre de l'Intérieur pioche une carte et la transmet — fidèlement ou non — au Roi et à la table.</li>
+    <li><strong>Résolution&nbsp;:</strong> tous les effets (robinets + carte) s'appliquent en même temps aux jauges du Royaume et aux ressources personnelles.</li>
+    <li><strong>Vérification de la Ruine&nbsp;:</strong> si la Stabilité ou les Caisses publiques chutent trop bas, la partie s'arrête immédiatement pour tout le monde.</li>
+  </ol>
+  <p>Le Royaume survit à 5 cycles (années) avant le décompte final des points.</p>
+</div>
+{% endblock %}

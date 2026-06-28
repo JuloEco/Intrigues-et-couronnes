@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Intrigues & Couronne — À la Cour{% endblock %}
+{% block body %}
+<div class="accueil">
+  <div class="parchemin-panel">
+    <h1 class="accueil-titre">Intrigues <span class="amp">&</span> Couronne</h1>
+    <p class="accueil-soustitre">La frontière entre le dévouement et la haute trahison n'est dictée que par votre ambition.</p>
+
+    <div class="champ-groupe">
+      <label for="pseudo">Votre nom à la Cour</label>
+      <input type="text" id="pseudo" maxlength="24" placeholder="ex. Comte de Valmont">
+    </div>
+
+    <div class="accueil-actions">
+      <button class="btn btn-primary" id="btn-creer">Fonder un nouveau Salon</button>
+    </div>
+
+    <div class="divider-orne"></div>
+
+    <div class="champ-groupe">
+      <label for="code-salon">Code du Salon</label>
+      <input type="text" id="code-salon" maxlength="6" placeholder="ex. K4P7Q" style="text-transform:uppercase; letter-spacing:0.15em; font-family:var(--font-mono);">
+    </div>
+    <div class="accueil-actions">
+      <button class="btn btn-or" id="btn-rejoindre">Rejoindre ce Salon</button>
+    </div>
+
+    <div class="message-erreur" id="message-erreur"></div>
+
+    <a class="lien-regles" href="{{ url_for('regles_page') }}">📜 Consulter le Livre des Règles</a>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+const socket = io();
+const pseudoInput = document.getElementById('pseudo');
+const codeInput = document.getElementById('code-salon');
+const erreurBox = document.getElementById('message-erreur');
+
+function afficherErreur(msg) {
+  erreurBox.textContent = msg;
+  erreurBox.classList.add('visible');
+}
+function pseudoOuDefaut() {
+  return pseudoInput.value.trim() || 'Joueur';
+}
+
+document.getElementById('btn-creer').addEventListener('click', () => {
+  erreurBox.classList.remove('visible');
+  socket.emit('create_room', { pseudo: pseudoOuDefaut() });
+});
+
+document.getElementById('btn-rejoindre').addEventListener('click', () => {
+  erreurBox.classList.remove('visible');
+  const code = codeInput.value.trim().toUpperCase();
+  if (!code) { afficherErreur('Veuillez saisir un code de salon.'); return; }
+  socket.emit('join_room_event', { pseudo: pseudoOuDefaut(), room_code: code });
+});
+
+socket.on('room_joined', (data) => {
+  sessionStorage.setItem('player_uid_' + data.room_code, data.player_uid);
+  sessionStorage.setItem('pseudo', pseudoOuDefaut());
+  window.location.href = '/room/' + data.room_code;
+});
+socket.on('join_error', (data) => { afficherErreur(data.message); });
+
+codeInput.addEventListener('input', () => { codeInput.value = codeInput.value.toUpperCase(); });
+codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-rejoindre').click(); });
+pseudoInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-creer').click(); });
+</script>
+{% endblock %}

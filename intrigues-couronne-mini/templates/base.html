@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>{% block title %}Intrigues & Couronne{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   INTRIGUES & COURONNE — Système de design "Chancellerie"
+   ========================================================================== */
+:root {
+  --parchemin: #ECE3C9; --parchemin-clair: #F5EEDA; --parchemin-ombre: #DCCEA3;
+  --encre: #241F1A; --encre-douce: #3A332A;
+  --sceau: #7A1F2B; --sceau-clair: #9C2E3C;
+  --or: #B8862E; --or-clair: #D4A84F;
+  --vert-garde: #3D5C42; --vert-garde-clair: #557A5C;
+  --ardoise: #5B5B52; --ardoise-claire: #8A8A7D;
+  --danger: #7A1F2B; --succes: #3D5C42;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Crimson Pro', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 3px;
+  --shadow-card: 0 2px 4px rgba(36,31,26,0.15), 0 8px 24px rgba(36,31,26,0.10);
+  --shadow-seal: 0 3px 6px rgba(36,31,26,0.35);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; background: var(--parchemin); color: var(--encre); font-family: var(--font-body); font-size: 17px; line-height: 1.5; }
+body { background-image: radial-gradient(ellipse at top left, rgba(184,134,46,0.06), transparent 50%), radial-gradient(ellipse at bottom right, rgba(122,31,43,0.05), transparent 50%); min-height: 100vh; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; color: var(--encre); margin: 0 0 0.4em 0; letter-spacing: 0.01em; }
+a { color: var(--sceau); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button, .btn { font-family: var(--font-body); font-size: 1rem; font-weight: 600; cursor: pointer; border: none; border-radius: var(--radius); padding: 0.7em 1.6em; transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease; }
+button:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--or-clair); outline-offset: 2px; }
+button:active, .btn:active { transform: translateY(1px); }
+button:disabled, .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.btn-primary { background: var(--sceau); color: var(--parchemin-clair); box-shadow: var(--shadow-seal); }
+.btn-primary:hover:not(:disabled) { background: var(--sceau-clair); }
+.btn-or { background: var(--or); color: var(--encre); box-shadow: var(--shadow-seal); }
+.btn-or:hover:not(:disabled) { background: var(--or-clair); }
+.btn-vert { background: var(--vert-garde); color: var(--parchemin-clair); }
+.btn-vert:hover:not(:disabled) { background: var(--vert-garde-clair); }
+.btn-fantome { background: transparent; color: var(--encre); border: 1.5px solid var(--ardoise-claire); }
+.btn-fantome:hover:not(:disabled) { background: rgba(91,91,82,0.08); }
+input, textarea, select { font-family: var(--font-body); font-size: 1rem; background: var(--parchemin-clair); border: 1.5px solid var(--parchemin-ombre); border-radius: var(--radius); padding: 0.65em 0.9em; color: var(--encre); }
+input::placeholder, textarea::placeholder { color: var(--ardoise-claire); }
+::selection { background: var(--or-clair); color: var(--encre); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ardoise); }
+.divider { border: none; border-top: 1.5px solid var(--parchemin-ombre); margin: 1.5em 0; }
+.divider-orne { display: flex; align-items: center; gap: 0.8em; margin: 1.5em 0; color: var(--or); }
+.divider-orne::before, .divider-orne::after { content: ""; flex: 1; height: 1.5px; background: linear-gradient(to right, transparent, var(--parchemin-ombre) 20%, var(--parchemin-ombre) 80%, transparent); }
+
+/* Accueil */
+.accueil { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2.5rem 1.25rem; }
+.parchemin-panel { position: relative; max-width: 560px; width: 100%; background: var(--parchemin-clair); border-radius: 4px; padding: 2.8rem 2.6rem; box-shadow: var(--shadow-card); border: 1px solid var(--parchemin-ombre); }
+.parchemin-panel::before { content: ""; position: absolute; inset: 10px; border: 1px solid rgba(184,134,46,0.35); pointer-events: none; border-radius: 2px; }
+.accueil-titre { font-size: 2.6rem; text-align: center; margin-bottom: 0.1em; line-height: 1.05; }
+.accueil-titre .amp { color: var(--sceau); font-style: italic; }
+.accueil-soustitre { text-align: center; color: var(--ardoise); font-style: italic; font-size: 1.05rem; margin-bottom: 2rem; }
+.champ-groupe { margin-bottom: 1.1rem; }
+.champ-groupe label { display: block; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ardoise); margin-bottom: 0.45em; }
+.champ-groupe input { width: 100%; }
+.accueil-actions { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 1.6rem; }
+.accueil-actions .btn { width: 100%; }
+.lien-regles { display: block; text-align: center; margin-top: 1.4rem; font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.04em; color: var(--ardoise); }
+.message-erreur { background: rgba(122,31,43,0.1); border-left: 3px solid var(--sceau); padding: 0.7em 1em; font-size: 0.92rem; margin-top: 1rem; border-radius: 2px; display: none; }
+.message-erreur.visible { display: block; }
+
+/* Salle de jeu */
+.table-jeu { min-height: 100vh; display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+.entete-royale { background: var(--encre); color: var(--parchemin); padding: 0.9rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem; position: sticky; top: 0; z-index: 30; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+.entete-royale .titre-jeu { font-family: var(--font-display); font-size: 1.4rem; color: var(--parchemin); margin: 0; }
+.entete-royale .titre-jeu .amp { color: var(--or-clair); font-style: italic; }
+.entete-info { display: flex; align-items: center; gap: 1.2rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--parchemin-ombre); }
+.code-salon { background: rgba(184,134,46,0.18); border: 1px solid var(--or); color: var(--or-clair); padding: 0.25em 0.7em; border-radius: var(--radius); letter-spacing: 0.12em; font-weight: 600; }
+.jauges-royaume { display: flex; gap: 1.8rem; align-items: center; }
+.sceau-jauge { display: flex; align-items: center; gap: 0.6rem; }
+.sceau-cercle { position: relative; width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; }
+.sceau-cercle svg { transform: rotate(-90deg); }
+.sceau-cercle .fond-piste { stroke: rgba(255,255,255,0.12); fill: none; }
+.sceau-cercle .remplissage { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease, stroke 0.4s ease; }
+.sceau-label { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--parchemin-ombre); }
+.sceau-valeur-grande { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 600; color: var(--parchemin); }
+.corps-table { display: grid; grid-template-columns: 1fr; gap: 1.2rem; padding: 1.4rem; max-width: 1180px; margin: 0 auto; width: 100%; }
+@media (min-width: 920px) { .corps-table { grid-template-columns: 2.1fr 1fr; align-items: start; } }
+.zone-principale { display: flex; flex-direction: column; gap: 1.2rem; }
+.panneau { background: var(--parchemin-clair); border: 1px solid var(--parchemin-ombre); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 1.5rem 1.6rem; }
+.panneau-titre { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.panneau-titre h2 { font-size: 1.3rem; margin: 0; }
+.ruban-cycle { display: inline-flex; align-items: center; gap: 0.5em; background: var(--vert-garde); color: var(--parchemin-clair); font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.05em; padding: 0.35em 0.9em; border-radius: 999px; margin-bottom: 0.9rem; }
+.ruban-cycle.phase-decision { background: var(--or); color: var(--encre); }
+.ruban-cycle.phase-rapport { background: var(--sceau); color: var(--parchemin-clair); }
+.ruban-cycle.phase-resolution { background: var(--ardoise); color: var(--parchemin-clair); }
+.grille-ministeres { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0.9rem; }
+.brevet-ministre { position: relative; background: var(--parchemin); border: 1.5px solid var(--parchemin-ombre); border-radius: var(--radius); padding: 1rem 1.1rem 1.1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.brevet-ministre.cest-moi { border-color: var(--or); box-shadow: 0 0 0 1px var(--or), var(--shadow-card); }
+.brevet-ministre.role-vacant { border-style: dashed; opacity: 0.65; }
+.brevet-ruban { position: absolute; top: -1px; right: 12px; background: var(--accent-role, var(--ardoise)); color: var(--parchemin-clair); font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.15em 0.55em; border-radius: 0 0 4px 4px; }
+.brevet-entete { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.5rem; }
+.brevet-icone { font-size: 1.5rem; line-height: 1; }
+.brevet-nom-role { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.brevet-titulaire { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ardoise); }
+.brevet-statut-pastille { display: inline-block; font-family: var(--font-mono); font-size: 0.65rem; background: rgba(91,91,82,0.12); color: var(--ardoise); padding: 0.1em 0.5em; border-radius: 999px; margin-top: 0.4em; }
+.choix-robinet { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+.choix-robinet button { flex: 1; padding: 0.55em 0.4em; font-size: 0.88rem; border: 1.5px solid var(--parchemin-ombre); background: var(--parchemin-clair); color: var(--encre); }
+.choix-robinet button.choix-ouvrir.selectionne { background: var(--vert-garde); border-color: var(--vert-garde); color: var(--parchemin-clair); }
+.choix-robinet button.choix-fermer.selectionne { background: var(--sceau); border-color: var(--sceau); color: var(--parchemin-clair); }
+.statut-vote { margin-top: 0.6rem; font-family: var(--font-mono); font-size: 0.78rem; color: var(--ardoise); }
+.statut-vote.a-vote { color: var(--vert-garde); font-weight: 600; }
+.journal-royal { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem; padding-right: 0.4rem; }
+.entree-journal { font-size: 0.88rem; padding: 0.4em 0.6em; background: rgba(91,91,82,0.06); border-left: 2px solid var(--parchemin-ombre); border-radius: 2px; }
+.carte-crise { background: linear-gradient(135deg, var(--parchemin-clair), var(--parchemin)); border: 2px solid var(--sceau); border-radius: var(--radius); padding: 1.3rem 1.4rem; margin-top: 1rem; }
+.carte-crise-titre { font-size: 1.25rem; margin-bottom: 0.3em; }
+.carte-crise-texte { font-style: italic; color: var(--ardoise); margin-bottom: 0.8em; }
+.carte-crise-effets { display: flex; gap: 1.2rem; font-family: var(--font-mono); font-size: 0.92rem; }
+.effet-positif { color: var(--vert-garde); }
+.effet-negatif { color: var(--sceau); }
+.zone-laterale { display: flex; flex-direction: column; gap: 1.2rem; }
+.liste-joueurs { display: flex; flex-direction: column; gap: 0.5rem; }
+.ligne-joueur { display: flex; align-items: center; justify-content: space-between; padding: 0.5em 0.7em; background: rgba(91,91,82,0.06); border-radius: var(--radius); font-size: 0.92rem; }
+.ligne-joueur .pseudo { font-weight: 600; }
+.pastille-roi { font-family: var(--font-mono); font-size: 0.65rem; background: var(--or); color: var(--encre); padding: 0.1em 0.5em; border-radius: 999px; }
+.pastille-deconnecte { color: var(--ardoise-claire); font-size: 0.78rem; }
+.chat-zone { display: flex; flex-direction: column; height: 320px; }
+.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.8rem; padding-right: 0.3rem; }
+.message-chat { font-size: 0.88rem; background: rgba(91,91,82,0.06); padding: 0.4em 0.65em; border-radius: var(--radius); }
+.message-chat .auteur { font-weight: 700; }
+.message-chat.auteur-roi .auteur { color: var(--or); }
+.chat-formulaire { display: flex; gap: 0.5rem; }
+.chat-formulaire input { flex: 1; }
+.voile-modale { position: fixed; inset: 0; background: rgba(36,31,26,0.55); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.voile-modale.cachee { display: none; }
+.boite-modale { background: var(--parchemin-clair); border-radius: 4px; padding: 1.8rem 2rem; max-width: 480px; width: 100%; box-shadow: var(--shadow-card); border: 1px solid var(--or); max-height: 90vh; overflow-y: auto; }
+.boite-modale h3 { font-size: 1.4rem; margin-bottom: 0.6rem; }
+.boite-modale-actions { display: flex; gap: 0.6rem; margin-top: 1.4rem; justify-content: flex-end; }
+.ecran-fin { text-align: center; padding: 1rem 0; }
+.ecran-fin.victoire .titre-fin { color: var(--vert-garde); }
+.ecran-fin.ruine .titre-fin { color: var(--sceau); }
+.titre-fin { font-size: 2.1rem; margin-bottom: 0.3em; }
+.tableau-scores { width: 100%; border-collapse: collapse; margin-top: 1.2rem; }
+.tableau-scores th, .tableau-scores td { text-align: left; padding: 0.55em 0.7em; border-bottom: 1px solid var(--parchemin-ombre); font-size: 0.92rem; }
+.tableau-scores th { font-family: var(--font-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ardoise); }
+.tableau-scores tr.vainqueur { background: rgba(184,134,46,0.15); font-weight: 700; }
+.lobby-attente { text-align: center; padding: 2rem 0; }
+.lobby-joueurs-grille { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; margin: 1.6rem 0; }
+.jeton-joueur { background: var(--parchemin); border: 1.5px solid var(--parchemin-ombre); padding: 0.55em 1.1em; border-radius: 999px; font-weight: 600; font-size: 0.92rem; }
+.jeton-joueur.cest-moi { border-color: var(--or); background: rgba(184,134,46,0.1); }
+.choix-roi-liste { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
+.choix-roi-option { display: flex; align-items: center; gap: 0.6rem; padding: 0.6em 0.8em; border: 1.5px solid var(--parchemin-ombre); border-radius: var(--radius); cursor: pointer; }
+.choix-roi-option input { margin: 0; }
+.choix-roi-option.selectionne { border-color: var(--or); background: rgba(184,134,46,0.08); }
+.texte-centre { text-align: center; }
+.texte-discret { color: var(--ardoise); font-size: 0.88rem; }
+.espace-vide { flex: 1; }
+.mt-1 { margin-top: 0.7rem; }
+.mt-2 { margin-top: 1.4rem; }
+@media (max-width: 720px) { .entete-royale { flex-direction: column; align-items: flex-start; } .jauges-royaume { width: 100%; justify-content: space-between; } .accueil-titre { font-size: 2.1rem; } .parchemin-panel { padding: 2rem 1.5rem; } }
+
+/* Page règles */
+.page-regles { max-width: 760px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+.page-regles h1 { font-size: 2.4rem; text-align: center; margin-bottom: 0.2em; }
+.page-regles .accueil-soustitre { margin-bottom: 2.5rem; }
+.page-regles h2 { font-size: 1.5rem; margin-top: 2.2rem; border-left: 3px solid var(--or); padding-left: 0.6em; }
+.page-regles h3 { font-size: 1.2rem; margin-top: 1.4rem; }
+.page-regles p, .page-regles li { color: var(--encre-douce); }
+.encart-avertissement { background: rgba(122,31,43,0.08); border-left: 3px solid var(--sceau); padding: 1em 1.2em; border-radius: 2px; margin: 1.2em 0; }
+.encart-info { background: rgba(61,92,66,0.08); border-left: 3px solid var(--vert-garde); padding: 1em 1.2em; border-radius: 2px; margin: 1.2em 0; }
+.retour-accueil { display: inline-block; margin-bottom: 1.5rem; font-family: var(--font-mono); font-size: 0.85rem; }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

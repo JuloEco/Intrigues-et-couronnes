@@ -1,0 +1,846 @@
+{% extends "base.html" %}
+{% block title %}Salon {{ room_code }} — Intrigues & Couronne{% endblock %}
+{% block body %}
+<div class="table-jeu" id="app" data-room-code="{{ room_code }}">
+
+  <header class="entete-royale">
+    <h1 class="titre-jeu">Intrigues <span class="amp">&amp;</span> Couronne</h1>
+    <div class="entete-info">
+      <span class="code-salon">{{ room_code }}</span>
+      <span id="info-cycle"></span>
+    </div>
+    <div class="jauges-royaume" id="jauges-royaume" style="display:none;">
+      <div class="sceau-jauge">
+        <div class="sceau-cercle">
+          <svg width="46" height="46" viewBox="0 0 46 46">
+            <circle class="fond-piste" cx="23" cy="23" r="19" stroke-width="5"></circle>
+            <circle class="remplissage" id="anneau-stabilite" cx="23" cy="23" r="19" stroke-width="5" stroke="#557A5C"></circle>
+          </svg>
+        </div>
+        <div>
+          <div class="sceau-label">Stabilité</div>
+          <div class="sceau-valeur-grande" id="valeur-stabilite">—</div>
+        </div>
+      </div>
+      <div class="sceau-jauge">
+        <div class="sceau-cercle">
+          <svg width="46" height="46" viewBox="0 0 46 46">
+            <circle class="fond-piste" cx="23" cy="23" r="19" stroke-width="5"></circle>
+            <circle class="remplissage" id="anneau-or" cx="23" cy="23" r="19" stroke-width="5" stroke="#D4A84F"></circle>
+          </svg>
+        </div>
+        <div>
+          <div class="sceau-label">Caisses</div>
+          <div class="sceau-valeur-grande" id="valeur-or">—</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== LOBBY (avant démarrage) ===================== -->
+  <div class="corps-table" id="vue-lobby">
+    <div class="panneau" style="grid-column: 1 / -1; max-width:640px; margin:2rem auto;">
+      <div class="lobby-attente">
+        <h2>Salon en attente</h2>
+        <p class="texte-discret">Partagez ce code pour que vos rivaux vous rejoignent&nbsp;:</p>
+        <p style="font-family:var(--font-mono); font-size:2rem; letter-spacing:0.18em; color:var(--sceau); margin:0.4em 0;" id="code-affiche"></p>
+
+        <div class="lobby-joueurs-grille" id="lobby-joueurs"></div>
+
+        <p class="texte-discret" id="lobby-hint">Il faut au moins 3 joueurs (1 Roi + 2 ministres) pour commencer.</p>
+
+        <div id="zone-choix-roi" style="display:none; text-align:left; max-width:380px; margin:1.4rem auto 0;">
+          <p class="eyebrow">Désigner le Roi</p>
+          <div class="choix-roi-liste" id="choix-roi-liste"></div>
+        </div>
+
+        <div class="mt-2">
+          <button class="btn btn-primary" id="btn-lancer" style="display:none;">Lancer la partie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TABLE DE JEU ===================== -->
+  <div class="corps-table" id="vue-jeu" style="display:none;">
+    <div class="zone-principale">
+
+      <div class="panneau" id="panneau-phase">
+        <span class="ruban-cycle" id="ruban-cycle"></span>
+        <div id="contenu-phase"></div>
+      </div>
+
+      <div class="panneau">
+        <div class="panneau-titre"><h2>Les Ministères</h2></div>
+        <div class="grille-ministeres" id="grille-ministeres"></div>
+      </div>
+
+      <div class="panneau">
+        <div class="panneau-titre"><h2>Journal de la Cour</h2></div>
+        <div class="journal-royal" id="journal-royal"></div>
+      </div>
+    </div>
+
+    <div class="zone-laterale">
+      <div class="panneau">
+        <div class="panneau-titre"><h2>À la Table</h2></div>
+        <div class="liste-joueurs" id="liste-joueurs"></div>
+      </div>
+
+      <div class="panneau chat-zone">
+        <div class="panneau-titre"><h2>Chambre du Conseil</h2></div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <form class="chat-formulaire" id="chat-formulaire">
+          <input type="text" id="chat-input" maxlength="500" placeholder="Murmurer un mot..." autocomplete="off">
+          <button class="btn btn-fantome" type="submit">Envoyer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ÉCRAN DE FIN ===================== -->
+  <div class="corps-table" id="vue-fin" style="display:none;">
+    <div class="panneau" style="grid-column: 1 / -1; max-width:680px; margin:2rem auto;">
+      <div class="ecran-fin" id="ecran-fin"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== MODALE : falsification du rapport ===================== -->
+<div class="voile-modale cachee" id="modale-falsification">
+  <div class="boite-modale">
+    <h3>📜 Rapport de Crise</h3>
+    <p id="falsification-texte"></p>
+    <div id="falsification-reel" class="carte-crise"></div>
+    <div id="falsification-edition" style="display:none; margin-top:1rem;">
+      <p class="eyebrow">Falsifier le rapport annoncé à la table</p>
+      <div class="champ-groupe">
+        <label>Stabilité annoncée</label>
+        <input type="number" id="input-stab-annonce">
+      </div>
+      <div class="champ-groupe">
+        <label>Or public annoncé</label>
+        <input type="number" id="input-or-annonce">
+      </div>
+    </div>
+    <div class="boite-modale-actions">
+      <button class="btn btn-vert" id="btn-confirmer-rapport">Transmettre fidèlement</button>
+      <button class="btn btn-primary" id="btn-falsifier-rapport" style="display:none;">Falsifier et transmettre</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODALE : démission / révocation ===================== -->
+<div class="voile-modale cachee" id="modale-succession">
+  <div class="boite-modale">
+    <h3 id="succession-titre"></h3>
+    <p class="texte-discret" id="succession-texte"></p>
+    <div class="choix-roi-liste" id="succession-liste"></div>
+    <div class="boite-modale-actions">
+      <button class="btn btn-fantome" id="btn-annuler-succession">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirmer-succession" disabled>Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+window.ROOM_CODE = "{{ room_code }}";
+
+// Charge le catalogue des rôles (textes, icônes, couleurs) depuis le serveur.
+window.ROLES_CATALOG = null;
+window.ROLES_CATALOG_READY = fetch('/api/roles')
+  .then(r => r.json())
+  .then(data => { window.ROLES_CATALOG = data; return data; });
+</script>
+<script>
+/* ==========================================================================
+   Intrigues & Couronne — client de la salle de jeu
+   ========================================================================== */
+
+const ROOM_CODE = window.ROOM_CODE;
+const socket = io();
+
+let myPlayerUid = sessionStorage.getItem('player_uid_' + ROOM_CODE) || null;
+let myPseudo = sessionStorage.getItem('pseudo') || 'Joueur';
+let isHost = false;
+let lastState = null;
+let selectedKingUid = null;        // choix en cours dans le lobby
+let successionContext = null;      // { mode: 'resign'|'revoke', role_id }
+
+const PHASE_LABELS = {
+  lobby: 'En attente',
+  discussion: 'Discussion',
+  decision: 'Délibération secrète',
+  rapport: 'Rapport de Crise',
+  resolution: 'Cycle résolu',
+  terminee_victoire: 'Partie terminée',
+  terminee_ruine: 'Le Royaume s\'est effondré',
+};
+
+// ---------------------------------------------------------------------------
+// Connexion / jonction du salon (gère aussi le refresh de page)
+// ---------------------------------------------------------------------------
+
+socket.on('connect', () => {
+  socket.emit('join_room_event', {
+    pseudo: myPseudo,
+    room_code: ROOM_CODE,
+    player_uid: myPlayerUid,
+  });
+});
+
+socket.on('room_joined', (data) => {
+  myPlayerUid = data.player_uid;
+  isHost = data.is_host;
+  sessionStorage.setItem('player_uid_' + ROOM_CODE, myPlayerUid);
+});
+
+socket.on('join_error', (data) => {
+  alert(data.message);
+  window.location.href = '/';
+});
+
+socket.on('action_error', (data) => {
+  afficherToastErreur(data.message);
+});
+
+socket.on('state_update', (state) => {
+  lastState = state;
+  render(state);
+});
+
+socket.on('crisis_drawn', (data) => {
+  ouvrirModaleFalsification(data.card, data.can_falsify);
+});
+
+socket.on('cycle_resolved', (summary) => {
+  fermerModaleFalsification();
+  afficherResumeCycle(summary);
+});
+
+socket.on('chat_message', (data) => {
+  ajouterMessageChat(data.pseudo, data.message, data.is_king);
+});
+
+function afficherToastErreur(msg) {
+  let toast = document.getElementById('toast-erreur');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-erreur';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'var(--sceau)';
+    toast.style.color = '#fff';
+    toast.style.padding = '0.8em 1.4em';
+    toast.style.borderRadius = '4px';
+    toast.style.zIndex = '200';
+    toast.style.boxShadow = '0 4px 14px rgba(0,0,0,0.3)';
+    toast.style.fontFamily = 'var(--font-body)';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+}
+
+// ---------------------------------------------------------------------------
+// Rendu principal : dispatch selon la phase
+// ---------------------------------------------------------------------------
+
+function render(state) {
+  const vueLobby = document.getElementById('vue-lobby');
+  const vueJeu = document.getElementById('vue-jeu');
+  const vueFin = document.getElementById('vue-fin');
+  const jauges = document.getElementById('jauges-royaume');
+
+  if (state.phase === 'lobby') {
+    vueLobby.style.display = '';
+    vueJeu.style.display = 'none';
+    vueFin.style.display = 'none';
+    jauges.style.display = 'none';
+    renderLobby(state);
+    return;
+  }
+
+  if (state.phase === 'terminee_victoire' || state.phase === 'terminee_ruine') {
+    vueLobby.style.display = 'none';
+    vueJeu.style.display = '';
+    vueFin.style.display = '';
+    jauges.style.display = '';
+    renderJauges(state);
+    renderMinisteres(state);
+    renderJoueurs(state);
+    renderJournal(state);
+    renderFin(state);
+    document.getElementById('panneau-phase').style.display = 'none';
+    return;
+  }
+
+  vueLobby.style.display = 'none';
+  vueJeu.style.display = '';
+  vueFin.style.display = 'none';
+  jauges.style.display = '';
+  document.getElementById('panneau-phase').style.display = '';
+
+  document.getElementById('info-cycle').textContent =
+    state.cycle ? `Cycle ${state.cycle} / ${ (window.ROLES_CATALOG && window.ROLES_CATALOG.nb_cycles) || 5 }` : '';
+
+  renderJauges(state);
+  renderPhase(state);
+  renderMinisteres(state);
+  renderJoueurs(state);
+  renderJournal(state);
+}
+
+// ---------------------------------------------------------------------------
+// Jauges (sceaux circulaires)
+// ---------------------------------------------------------------------------
+
+function renderJauges(state) {
+  const R = 19;
+  const C = 2 * Math.PI * R;
+
+  const stab = Math.max(0, Math.min(100, state.stabilite));
+  const anneauStab = document.getElementById('anneau-stabilite');
+  anneauStab.setAttribute('stroke-dasharray', C);
+  anneauStab.setAttribute('stroke-dashoffset', C * (1 - stab / 100));
+  anneauStab.setAttribute('stroke', stab <= 20 ? '#9C2E3C' : (stab <= 45 ? '#D4A84F' : '#557A5C'));
+  document.getElementById('valeur-stabilite').textContent = state.stabilite;
+
+  const orRatio = Math.max(0, Math.min(1, state.or_public / 150));
+  const anneauOr = document.getElementById('anneau-or');
+  anneauOr.setAttribute('stroke-dasharray', C);
+  anneauOr.setAttribute('stroke-dashoffset', C * (1 - orRatio));
+  anneauOr.setAttribute('stroke', state.or_public < 0 ? '#9C2E3C' : '#D4A84F');
+  document.getElementById('valeur-or').textContent = state.or_public;
+}
+
+// ---------------------------------------------------------------------------
+// Lobby
+// ---------------------------------------------------------------------------
+
+function renderLobby(state) {
+  document.getElementById('code-affiche').textContent = state.room_code;
+  isHost = (state.host_uid === myPlayerUid);
+
+  const grille = document.getElementById('lobby-joueurs');
+  grille.innerHTML = '';
+  Object.values(state.players).forEach(p => {
+    const jeton = document.createElement('div');
+    jeton.className = 'jeton-joueur' + (p.player_uid === myPlayerUid ? ' cest-moi' : '');
+    jeton.textContent = p.pseudo + (state.host_uid === p.player_uid ? ' 🗝️' : '');
+    grille.appendChild(jeton);
+  });
+
+  const nbJoueurs = Object.keys(state.players).length;
+  const btnLancer = document.getElementById('btn-lancer');
+  const zoneChoixRoi = document.getElementById('zone-choix-roi');
+  const hint = document.getElementById('lobby-hint');
+
+  if (isHost) {
+    hint.textContent = nbJoueurs < 3
+      ? `En attente de joueurs (${nbJoueurs}/3 minimum)...`
+      : 'Vous pouvez désigner le Roi et lancer la partie.';
+
+    if (nbJoueurs >= 3) {
+      zoneChoixRoi.style.display = '';
+      renderChoixRoi(state);
+      btnLancer.style.display = '';
+      btnLancer.disabled = !selectedKingUid;
+    } else {
+      zoneChoixRoi.style.display = 'none';
+      btnLancer.style.display = 'none';
+    }
+  } else {
+    hint.textContent = nbJoueurs < 3
+      ? `En attente de joueurs (${nbJoueurs}/3 minimum)...`
+      : 'En attente que l\'hôte désigne le Roi et lance la partie.';
+    zoneChoixRoi.style.display = 'none';
+    btnLancer.style.display = 'none';
+  }
+}
+
+function renderChoixRoi(state) {
+  const liste = document.getElementById('choix-roi-liste');
+  liste.innerHTML = '';
+  if (selectedKingUid === null) selectedKingUid = state.host_uid;
+
+  Object.values(state.players).forEach(p => {
+    const option = document.createElement('label');
+    option.className = 'choix-roi-option' + (selectedKingUid === p.player_uid ? ' selectionne' : '');
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'roi-choix';
+    radio.value = p.player_uid;
+    radio.checked = selectedKingUid === p.player_uid;
+    radio.addEventListener('change', () => {
+      selectedKingUid = p.player_uid;
+      renderChoixRoi(state);
+      document.getElementById('btn-lancer').disabled = false;
+    });
+    const texte = document.createElement('span');
+    texte.textContent = '👑 ' + p.pseudo;
+    option.appendChild(radio);
+    option.appendChild(texte);
+    liste.appendChild(option);
+  });
+}
+
+document.getElementById('btn-lancer').addEventListener('click', () => {
+  socket.emit('start_game', { king_uid: selectedKingUid });
+});
+
+// ---------------------------------------------------------------------------
+// Phase courante (discussion / décision / rapport / résolution)
+// ---------------------------------------------------------------------------
+
+function renderPhase(state) {
+  const ruban = document.getElementById('ruban-cycle');
+  const contenu = document.getElementById('contenu-phase');
+  ruban.className = 'ruban-cycle phase-' + state.phase;
+  ruban.textContent = PHASE_LABELS[state.phase] || state.phase;
+
+  contenu.innerHTML = '';
+
+  const me = state.players[myPlayerUid];
+  const monRoleIds = me ? (me.role_ids || []) : [];
+
+  if (state.phase === 'decision') {
+    const p = document.createElement('p');
+    p.className = 'texte-discret';
+    p.textContent = monRoleIds.length
+      ? 'Choisissez secrètement, pour chacun de vos portefeuilles, si vous Ouvrez ou Fermez le robinet ce cycle.'
+      : (me && me.is_king
+          ? 'Les ministres délibèrent en secret. Vous recevrez le rapport de crise dès qu\'il sera prêt.'
+          : 'Vous n\'avez pas de portefeuille ce cycle. Profitez-en pour observer et négocier en coulisses.');
+    contenu.appendChild(p);
+
+    if (monRoleIds.length) {
+      monRoleIds.forEach(roleId => {
+        contenu.appendChild(construireBlocDecision(roleId, state));
+      });
+    }
+
+    const compteur = document.createElement('p');
+    compteur.className = 'statut-vote';
+    const nbVotes = Object.keys(state.decisions || {}).length;
+    compteur.textContent = `${nbVotes} / ${state.active_role_ids.length} ministères ont arrêté leur décision.`;
+    contenu.appendChild(compteur);
+  } else if (state.phase === 'rapport') {
+    const p = document.createElement('p');
+    p.className = 'texte-discret';
+    if (monRoleIds.includes('interieur')) {
+      p.textContent = 'Une fenêtre est ouverte pour transmettre — ou falsifier — le rapport de crise.';
+    } else {
+      p.textContent = 'Le Ministre de l\'Intérieur compose son rapport de crise pour le Roi...';
+    }
+    contenu.appendChild(p);
+  } else if (state.phase === 'resolution') {
+    const p = document.createElement('p');
+    p.className = 'texte-discret';
+    p.textContent = 'Le cycle a été résolu. Consultez le journal ci-dessous, puis passez au cycle suivant.';
+    contenu.appendChild(p);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-primary mt-1';
+    btn.textContent = 'Passer au cycle suivant →';
+    btn.addEventListener('click', () => socket.emit('next_cycle', {}));
+    contenu.appendChild(btn);
+  }
+}
+
+function construireBlocDecision(roleId, state) {
+  const cat = window.ROLES_CATALOG;
+  const roleDef = cat ? cat.roles[roleId] : null;
+  const dejaVote = !!(state.decisions && state.decisions[roleId]);
+
+  const wrap = document.createElement('div');
+  wrap.style.marginBottom = '0.9rem';
+
+  const titre = document.createElement('p');
+  titre.innerHTML = `<strong>${roleDef ? roleDef.icon + ' ' + roleDef.name : roleId}</strong>`;
+  wrap.appendChild(titre);
+
+  const choixDiv = document.createElement('div');
+  choixDiv.className = 'choix-robinet';
+
+  const btnOuvrir = document.createElement('button');
+  btnOuvrir.className = 'choix-ouvrir';
+  btnOuvrir.textContent = '🟢 Ouvrir';
+  btnOuvrir.disabled = dejaVote;
+  btnOuvrir.addEventListener('click', () => {
+    socket.emit('submit_decision', { role_id: roleId, choice: 'ouvrir' });
+  });
+
+  const btnFermer = document.createElement('button');
+  btnFermer.className = 'choix-fermer';
+  btnFermer.textContent = '🔴 Fermer';
+  btnFermer.disabled = dejaVote;
+  btnFermer.addEventListener('click', () => {
+    socket.emit('submit_decision', { role_id: roleId, choice: 'fermer' });
+  });
+
+  choixDiv.appendChild(btnOuvrir);
+  choixDiv.appendChild(btnFermer);
+  wrap.appendChild(choixDiv);
+
+  if (dejaVote) {
+    const statut = document.createElement('p');
+    statut.className = 'statut-vote a-vote';
+    statut.textContent = '✓ Décision enregistrée pour ce portefeuille.';
+    wrap.appendChild(statut);
+  }
+
+  if (roleDef) {
+    const desc = document.createElement('p');
+    desc.className = 'texte-discret';
+    desc.style.fontSize = '0.82rem';
+    desc.style.marginTop = '0.5em';
+    desc.textContent = roleDef.ouvrir_desc + ' / ' + roleDef.fermer_desc;
+    wrap.appendChild(desc);
+  }
+
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Grille des ministères (brevets)
+// ---------------------------------------------------------------------------
+
+function renderMinisteres(state) {
+  const grille = document.getElementById('grille-ministeres');
+  grille.innerHTML = '';
+  const cat = window.ROLES_CATALOG;
+  if (!cat) return;
+
+  state.active_role_ids.forEach(roleId => {
+    const roleDef = cat.roles[roleId];
+    const titulaireUid = Object.keys(state.players).find(uid =>
+      (state.players[uid].role_ids || []).includes(roleId)
+    );
+    const titulaire = titulaireUid ? state.players[titulaireUid] : null;
+
+    const brevet = document.createElement('div');
+    brevet.className = 'brevet-ministre' + (titulaireUid === myPlayerUid ? ' cest-moi' : '') + (!titulaire ? ' role-vacant' : '');
+    brevet.style.setProperty('--accent-role', roleDef.color);
+
+    const ruban = document.createElement('div');
+    ruban.className = 'brevet-ruban';
+    ruban.textContent = roleDef.name.split(' ').slice(-1)[0];
+    brevet.appendChild(ruban);
+
+    const entete = document.createElement('div');
+    entete.className = 'brevet-entete';
+    entete.innerHTML = `<span class="brevet-icone">${roleDef.icon}</span><span class="brevet-nom-role">${roleDef.name}</span>`;
+    brevet.appendChild(entete);
+
+    const titulaireP = document.createElement('div');
+    titulaireP.className = 'brevet-titulaire';
+    if (titulaire) {
+      let cumulSuffixe = '';
+      if (titulaire.role_ids.length > 1) cumulSuffixe = ' (cumul)';
+      titulaireP.textContent = '👤 ' + titulaire.pseudo + cumulSuffixe + (titulaire.connected ? '' : ' — déconnecté');
+    } else {
+      titulaireP.textContent = '— poste vacant —';
+    }
+    brevet.appendChild(titulaireP);
+
+    const pastille = document.createElement('span');
+    pastille.className = 'brevet-statut-pastille';
+    pastille.textContent = `Or: ${titulaire ? titulaire.or_personnel : 0} · Influence: ${titulaire ? titulaire.influence : 0}`;
+    brevet.appendChild(pastille);
+
+    // Actions : démission (si c'est mon poste) / révocation (si je suis le Roi)
+    const actions = document.createElement('div');
+    actions.style.marginTop = '0.6rem';
+    actions.style.display = 'flex';
+    actions.style.gap = '0.4rem';
+
+    if (titulaireUid === myPlayerUid && state.phase !== 'lobby' && state.phase !== 'terminee_victoire' && state.phase !== 'terminee_ruine') {
+      const btnDemission = document.createElement('button');
+      btnDemission.className = 'btn btn-fantome';
+      btnDemission.style.fontSize = '0.78rem';
+      btnDemission.style.padding = '0.4em 0.8em';
+      btnDemission.textContent = '💥 Démissionner';
+      btnDemission.addEventListener('click', () => ouvrirModaleSuccession('resign', roleId, state));
+      actions.appendChild(btnDemission);
+    }
+
+    const me = state.players[myPlayerUid];
+    if (me && me.is_king && titulaire && state.phase !== 'lobby' && state.phase !== 'terminee_victoire' && state.phase !== 'terminee_ruine') {
+      const btnRevoquer = document.createElement('button');
+      btnRevoquer.className = 'btn btn-fantome';
+      btnRevoquer.style.fontSize = '0.78rem';
+      btnRevoquer.style.padding = '0.4em 0.8em';
+      btnRevoquer.textContent = '👑 Révoquer';
+      btnRevoquer.addEventListener('click', () => ouvrirModaleSuccession('revoke', roleId, state));
+      actions.appendChild(btnRevoquer);
+    }
+
+    if (actions.children.length) brevet.appendChild(actions);
+
+    grille.appendChild(brevet);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Liste des joueurs (panneau latéral)
+// ---------------------------------------------------------------------------
+
+function renderJoueurs(state) {
+  const liste = document.getElementById('liste-joueurs');
+  liste.innerHTML = '';
+  Object.values(state.players).forEach(p => {
+    const ligne = document.createElement('div');
+    ligne.className = 'ligne-joueur';
+    const gauche = document.createElement('span');
+    gauche.className = 'pseudo';
+    gauche.textContent = p.pseudo + (p.player_uid === myPlayerUid ? ' (vous)' : '');
+    ligne.appendChild(gauche);
+
+    const droite = document.createElement('span');
+    if (p.is_king) {
+      const pastille = document.createElement('span');
+      pastille.className = 'pastille-roi';
+      pastille.textContent = '👑 Roi';
+      droite.appendChild(pastille);
+    } else if (!p.connected) {
+      const dc = document.createElement('span');
+      dc.className = 'pastille-deconnecte';
+      dc.textContent = 'déconnecté';
+      droite.appendChild(dc);
+    }
+    ligne.appendChild(droite);
+    liste.appendChild(ligne);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Journal
+// ---------------------------------------------------------------------------
+
+function renderJournal(state) {
+  const journal = document.getElementById('journal-royal');
+  journal.innerHTML = '';
+  (state.log || []).slice().reverse().forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'entree-journal';
+    div.textContent = entry;
+    journal.appendChild(div);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Falsification du rapport de crise (modale Ministre Intérieur)
+// ---------------------------------------------------------------------------
+
+function ouvrirModaleFalsification(card, canFalsify) {
+  const me = lastState ? lastState.players[myPlayerUid] : null;
+  const jeSuisInterieur = me && (me.role_ids || []).includes('interieur');
+
+  document.getElementById('falsification-texte').textContent = card.texte;
+  const reelDiv = document.getElementById('falsification-reel');
+  reelDiv.innerHTML = `
+    <div class="carte-crise-titre">${card.titre}</div>
+    <div class="carte-crise-effets">
+      <span class="${card.stabilite_delta >= 0 ? 'effet-positif' : 'effet-negatif'}">Stabilité ${card.stabilite_delta >= 0 ? '+' : ''}${card.stabilite_delta}</span>
+      <span class="${card.or_public_delta >= 0 ? 'effet-positif' : 'effet-negatif'}">Caisses ${card.or_public_delta >= 0 ? '+' : ''}${card.or_public_delta}</span>
+    </div>
+  `;
+
+  const editionDiv = document.getElementById('falsification-edition');
+  const btnFalsifier = document.getElementById('btn-falsifier-rapport');
+  const btnConfirmer = document.getElementById('btn-confirmer-rapport');
+
+  if (jeSuisInterieur && canFalsify) {
+    editionDiv.style.display = '';
+    btnFalsifier.style.display = '';
+    document.getElementById('input-stab-annonce').value = card.stabilite_delta;
+    document.getElementById('input-or-annonce').value = card.or_public_delta;
+  } else {
+    editionDiv.style.display = 'none';
+    btnFalsifier.style.display = 'none';
+  }
+
+  if (!jeSuisInterieur) {
+    btnConfirmer.style.display = 'none';
+  } else {
+    btnConfirmer.style.display = '';
+    btnConfirmer.textContent = canFalsify ? 'Transmettre fidèlement (sans truquer)' : 'Transmettre au Roi';
+  }
+
+  document.getElementById('modale-falsification').classList.remove('cachee');
+}
+
+function fermerModaleFalsification() {
+  document.getElementById('modale-falsification').classList.add('cachee');
+}
+
+document.getElementById('btn-confirmer-rapport').addEventListener('click', () => {
+  socket.emit('confirm_report', {});
+});
+
+document.getElementById('btn-falsifier-rapport').addEventListener('click', () => {
+  const stab = parseInt(document.getElementById('input-stab-annonce').value, 10) || 0;
+  const orAnnonce = parseInt(document.getElementById('input-or-annonce').value, 10) || 0;
+  socket.emit('falsify_report', { stabilite_annoncee: stab, or_annonce: orAnnonce });
+});
+
+// ---------------------------------------------------------------------------
+// Résumé de cycle (résolution)
+// ---------------------------------------------------------------------------
+
+function afficherResumeCycle(summary) {
+  // Le résumé détaillé est de toute façon repris dans le journal (state.log) ;
+  // ici on se contente de notifier discrètement la table.
+  if (summary.carte && summary.carte.falsifie) {
+    afficherToastErreur('⚠️ Le rapport de crise a été falsifié par le Ministre de l\'Intérieur !');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Démission / Révocation : modale de choix du successeur
+// ---------------------------------------------------------------------------
+
+function ouvrirModaleSuccession(mode, roleId, state) {
+  successionContext = { mode, role_id: roleId };
+  const titre = document.getElementById('succession-titre');
+  const texte = document.getElementById('succession-texte');
+  const liste = document.getElementById('succession-liste');
+  const btnConfirmer = document.getElementById('btn-confirmer-succession');
+
+  titre.textContent = mode === 'resign' ? '💥 Démission' : '👑 Révocation royale';
+  texte.textContent = mode === 'resign'
+    ? 'Désignez la personne qui reprend intégralement ce portefeuille (jamais le Roi).'
+    : 'Désignez le successeur de ce ministre destitué (jamais le Roi).';
+
+  liste.innerHTML = '';
+  let choixCourant = null;
+
+  Object.values(state.players).forEach(p => {
+    if (p.is_king) return; // jamais le Roi
+    if ((p.role_ids || []).includes(roleId)) return; // pas l'actuel titulaire du même rôle
+
+    const option = document.createElement('label');
+    option.className = 'choix-roi-option';
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'succession-choix';
+    radio.value = p.player_uid;
+    radio.addEventListener('change', () => {
+      choixCourant = p.player_uid;
+      document.querySelectorAll('#succession-liste .choix-roi-option').forEach(el => el.classList.remove('selectionne'));
+      option.classList.add('selectionne');
+      btnConfirmer.disabled = false;
+    });
+    const texteOption = document.createElement('span');
+    let suffixe = (p.role_ids && p.role_ids.length) ? ' (cumulera ses portefeuilles)' : ' (libre)';
+    texteOption.textContent = p.pseudo + suffixe;
+    option.appendChild(radio);
+    option.appendChild(texteOption);
+    liste.appendChild(option);
+  });
+
+  btnConfirmer.disabled = true;
+  btnConfirmer.onclick = () => {
+    if (!choixCourant) return;
+    if (successionContext.mode === 'resign') {
+      socket.emit('resign', { role_id: successionContext.role_id, successor_uid: choixCourant });
+    } else {
+      socket.emit('revoke', { role_id: successionContext.role_id, successor_uid: choixCourant });
+    }
+    fermerModaleSuccession();
+  };
+
+  document.getElementById('modale-succession').classList.remove('cachee');
+}
+
+function fermerModaleSuccession() {
+  document.getElementById('modale-succession').classList.add('cachee');
+  successionContext = null;
+}
+
+document.getElementById('btn-annuler-succession').addEventListener('click', fermerModaleSuccession);
+
+// ---------------------------------------------------------------------------
+// Écran de fin
+// ---------------------------------------------------------------------------
+
+function renderFin(state) {
+  const div = document.getElementById('ecran-fin');
+  const victoire = state.phase === 'terminee_victoire';
+
+  let html = '';
+  if (!victoire) {
+    html += `<div class="ecran-fin ruine">
+      <div class="titre-fin">💀 Le Royaume s'est effondré</div>
+      <p>La Stabilité ou les Caisses de l'État ont atteint un point de non-retour. Tous les joueurs perdent la partie.</p>
+    </div>`;
+  } else {
+    const scores = state.final_scores || {};
+    const lignes = Object.entries(scores)
+      .sort((a, b) => b[1].puissance - a[1].puissance)
+      .map(([uid, s]) => `
+        <tr class="${uid === state.winner_uid ? 'vainqueur' : ''}">
+          <td>${s.pseudo}${uid === state.winner_uid ? ' 👑' : ''}</td>
+          <td>${s.role}</td>
+          <td>${s.or_personnel}</td>
+          <td>${s.influence}</td>
+          <td>${s.statut_ministere} × ${s.stabilite_finale}</td>
+          <td><strong>${s.puissance}</strong></td>
+        </tr>
+      `).join('');
+
+    html += `<div class="ecran-fin victoire">
+      <div class="titre-fin">🏆 Le Royaume a survécu !</div>
+      <p>Décompte de la Puissance Politique après ${5} cycles.</p>
+      <table class="tableau-scores">
+        <thead><tr><th>Joueur</th><th>Poste(s)</th><th>Or</th><th>Influence</th><th>Statut × Stab.</th><th>Puissance</th></tr></thead>
+        <tbody>${lignes}</tbody>
+      </table>
+    </div>`;
+  }
+  div.innerHTML = html;
+}
+
+// ---------------------------------------------------------------------------
+// Chat
+// ---------------------------------------------------------------------------
+
+document.getElementById('chat-formulaire').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  socket.emit('send_chat', { message: msg });
+  input.value = '';
+});
+
+function ajouterMessageChat(pseudo, message, isKing) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'message-chat' + (isKing ? ' auteur-roi' : '');
+  const auteurSpan = document.createElement('span');
+  auteurSpan.className = 'auteur';
+  auteurSpan.textContent = (isKing ? '👑 ' : '') + pseudo + ' : ';
+  div.appendChild(auteurSpan);
+  div.appendChild(document.createTextNode(message));
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ---------------------------------------------------------------------------
+// Init : attendre le catalogue des rôles avant le premier rendu réel
+// ---------------------------------------------------------------------------
+
+window.ROLES_CATALOG_READY.then(() => {
+  if (lastState) render(lastState);
+});
+
+</script>
+{% endblock %}
