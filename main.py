@@ -930,14 +930,13 @@ def on_submit_decision(data):
 
     if gs.all_decisions_in():
         if "interieur" in gs.active_role_ids:
-            card = gs.draw_crisis_card()
-            interieur_uid = gs.ministre_uid_for_role("interieur")
+            gs.draw_crisis_card() # Pioche la carte et remplit gs.current_card_revealed
+            broadcast_state(gs)   # Envoie l'état (avec la carte dedans) à tout le monde
+            return
+        else:
+            summary = gs.resolve_cycle()
             broadcast_state(gs)
-            if interieur_uid:
-                socketio.emit("crisis_drawn", {
-                    "card": card,
-                    "can_falsify": gs.decisions.get("interieur") == "fermer",
-                }, room=gs.players[interieur_uid].sid)
+            socketio.emit("cycle_resolved", summary, room=gs.room_code)
             return
         else:
             summary = gs.resolve_cycle()
