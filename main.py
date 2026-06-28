@@ -770,8 +770,7 @@ def persist(gs: GameState) -> None:
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
-
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 init_db()
 
 _sid_index: dict[str, tuple[str, str]] = {}  # sid -> (room_code, player_uid)
