@@ -23,8 +23,14 @@ DÉPLOIEMENT RAILWAY
    mémoire (en plus d'être sauvegardé en DB à chaque coup), donc plusieurs
    workers verraient des états différents pour un même salon.
 """
-
 from __future__ import annotations
+
+import gevent.monkey
+gevent.monkey.patch_all()
+
+import os
+import json
+import random
 
 import os
 import json
@@ -35,10 +41,6 @@ import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from enum import Enum
-import gevent.monkey
-gevent.monkey.patch_all()
-
-from __future__ import annotations
 
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, emit
