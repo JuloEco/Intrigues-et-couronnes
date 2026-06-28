@@ -930,13 +930,8 @@ def on_submit_decision(data):
 
     if gs.all_decisions_in():
         if "interieur" in gs.active_role_ids:
-            gs.draw_crisis_card() # Pioche la carte et remplit gs.current_card_revealed
-            broadcast_state(gs)   # Envoie l'état (avec la carte dedans) à tout le monde
-            return
-        else:
-            summary = gs.resolve_cycle()
+            gs.draw_crisis_card()
             broadcast_state(gs)
-            socketio.emit("cycle_resolved", summary, room=gs.room_code)
             return
         else:
             summary = gs.resolve_cycle()
@@ -945,7 +940,6 @@ def on_submit_decision(data):
             return
 
     broadcast_state(gs)
-
 
 @socketio.on("falsify_report")
 def on_falsify_report(data):
