@@ -66,7 +66,10 @@ class RoleDef:
     voie_fourbe: str
     ouvrir_desc: str
     fermer_desc: str
-    statut_ministere: int  # poids dans Puissance = ... + (Statut × Stabilité)
+    statut_ministere: int  # poids dans Puissance = ... + (Statut × 10) + (Stabilité finale / 2)
+    titre_courtisan: str = ""       # épithète versaillaise du poste
+    pouvoir_nom: str = ""           # nom du Pouvoir de Cour (manœuvre spéciale, 1 usage/partie)
+    pouvoir_desc: str = ""
 
 
 ROLES: dict[str, RoleDef] = {
@@ -84,8 +87,12 @@ ROLES: dict[str, RoleDef] = {
         ouvrir_desc="Transmet des rapports clairs : la crise piochée est annoncée "
                      "avec ses véritables effets.",
         fermer_desc="Ment sur la crise : peut modifier les montants annoncés avant "
-                     "résolution, au risque qu'elle empire si démasquée.",
+                     "résolution, au risque d'être démasqué devant toute la Cour.",
         statut_ministere=2,
+        titre_courtisan="Le Lieutenant Général de Police",
+        pouvoir_nom="Le Cabinet Noir",
+        pouvoir_desc="Une fois par partie, ouvre en secret les lettres du Royaume : "
+                     "révèle la prochaine carte de crise avant que quiconque ne délibère.",
     ),
     "finances": RoleDef(
         id="finances",
@@ -103,6 +110,10 @@ ROLES: dict[str, RoleDef] = {
         fermer_desc="Bloque les budgets : +Or personnel (détourné), mais risque "
                      "de faire chuter les Caisses de l'État.",
         statut_ministere=3,
+        titre_courtisan="Le Surintendant, à la manière de Colbert",
+        pouvoir_nom="L'Emprunt aux Financiers Génois",
+        pouvoir_desc="Une fois par partie, obtient 25 Or public immédiatement — mais "
+                     "la dette est prélevée sur son Or personnel dès le cycle suivant.",
     ),
     "aumonier": RoleDef(
         id="aumonier",
@@ -119,6 +130,11 @@ ROLES: dict[str, RoleDef] = {
         fermer_desc="Lance un interdit religieux : +Or personnel (indulgences), "
                      "mais risque de faire chuter la Stabilité.",
         statut_ministere=2,
+        titre_courtisan="Le Confesseur Royal, tel Bossuet en chaire",
+        pouvoir_nom="Le Ban et l'Excommunication",
+        pouvoir_desc="Une fois par partie, accuse publiquement d'hérésie un autre "
+                     "ministre : celui-ci perd Influence et Prestige de Cour, mais "
+                     "le scandale ébranle un peu la Stabilité du Royaume.",
     ),
     "subsistances": RoleDef(
         id="subsistances",
@@ -135,6 +151,11 @@ ROLES: dict[str, RoleDef] = {
         fermer_desc="Spécule sur le grain : +Or personnel, mais risque de "
                      "Stabilité en baisse (famine).",
         statut_ministere=1,
+        titre_courtisan="Le Grand Intendant des Vivres et Bâtiments",
+        pouvoir_nom="Le Grand Banquet de Versailles",
+        pouvoir_desc="Une fois par partie, offre un banquet fastueux à toute la "
+                     "Cour : +Stabilité et +Prestige de Cour pour tous les "
+                     "ministres en poste, financé sur les Caisses de l'État.",
     ),
     "connetable": RoleDef(
         id="connetable",
@@ -149,9 +170,14 @@ ROLES: dict[str, RoleDef] = {
                      "entre ministres en échange d'une commission.",
         ouvrir_desc="Maintient l'ordre : protège les Caisses et l'Or personnel "
                      "de tous contre le vol ce cycle.",
-        fermer_desc="Laisse planer l'anarchie : +Or personnel (commissions), "
-                     "mais expose tout le monde aux vols/pillages.",
+        fermer_desc="Laisse planer l'anarchie : +Or personnel (commissions), mais "
+                     "expose tout le monde aux vols/pillages et inquiète la Cour.",
         statut_ministere=1,
+        titre_courtisan="Le Capitaine des Mousquetaires du Roi",
+        pouvoir_nom="La Grande Parade du Régiment des Gardes",
+        pouvoir_desc="Une fois par partie, fait défiler la garde royale sous les "
+                     "fenêtres du palais : rassure immédiatement la Cour "
+                     "(+Stabilité) et rehausse son propre Prestige.",
     ),
 }
 
@@ -162,11 +188,13 @@ KING_ROLE = {
     "name": "Le Roi",
     "icon": "👑",
     "color": "#f0c419",
+    "titre_courtisan": "Le Roi-Soleil, Sa Majesté Très-Chrétienne",
     "description": (
-        "Arbitre suprême de la partie. Le Roi ne possède pas de robinet : il "
-        "reçoit les rapports du Ministre de l'Intérieur, peut révoquer un "
-        "ministre suspecté de trahison, et valide la bonne tenue du Royaume. "
-        "Il ne compte pas dans le calcul de Puissance Politique."
+        "Arbitre suprême de la partie, assis dans la Galerie des Glaces. Le Roi "
+        "ne possède pas de robinet : il reçoit les rapports du Ministre de "
+        "l'Intérieur, peut révoquer un ministre suspecté de trahison (droit "
+        "limité — voir ci-dessous), et valide la bonne tenue du Royaume. Il ne "
+        "compte pas dans le calcul de Puissance Politique."
     ),
 }
 
@@ -176,6 +204,7 @@ OR_PUBLIC_INITIAL = 100
 NB_CYCLES = 5
 MIN_TOTAL_PLAYERS = 3   # Roi + 2 ministres
 MAX_TOTAL_PLAYERS = 6   # Roi + 5 ministres
+REVOCATIONS_ROYALES_INITIALES = 2  # le Roi ne peut destituer qu'un nombre limité de fois
 
 
 def nb_ministres_for(total_players: int) -> int:
@@ -235,6 +264,20 @@ CRISIS_DECK: list[CrisisCard] = [
     CrisisCard("c23", "Hiver précoce et rude", "Le froid frappe plus tôt que prévu.", -5, -12),
     CrisisCard("c24", "Réconciliation de deux maisons rivales", "La paix nobiliaire rassure la cour.", 6, 4),
     CrisisCard("c25", "Effondrement d'un pont royal", "Des travaux d'urgence s'imposent.", -4, -25),
+    CrisisCard("c26", "Bal masqué du Roi-Soleil", "Versailles resplendit sous mille chandelles.", 9, -18),
+    CrisisCard("c27", "Une favorite tombe en disgrâce", "Les murmures des courtisans s'emballent.", -7, 0),
+    CrisisCard("c28", "Incendie à l'Opéra de la Cour", "Les flammes ravagent le théâtre royal.", -6, -20),
+    CrisisCard("c29", "Molière joue une pièce interdite", "Le Tartuffe scandalise autant qu'il fait rire.", -4, 3),
+    CrisisCard("c30", "Vol de la vaisselle d'or royale", "Un larcin secoue les appartements du Roi.", -5, -16),
+    CrisisCard("c31", "Duel interdit dans les jardins", "Deux gentilshommes s'affrontent à l'aube.", -6, -2),
+    CrisisCard("c32", "Une comète effraie le peuple", "Des présages funestes courent dans les campagnes.", -5, -3),
+    CrisisCard("c33", "Ambassade du Siam reçue en grande pompe", "Des présents exotiques éblouissent la Cour.", 7, -12),
+    CrisisCard("c34", "Grondement de Fronde en province", "D'anciennes rancunes nobiliaires ressurgissent.", -9, -6),
+    CrisisCard("c35", "Une favorite influence les décrets", "La Cour bruisse d'intrigues de boudoir.", -3, 10),
+    CrisisCard("c36", "Feu d'artifice pour la Dauphine", "Le ciel de Versailles s'embrase de mille couleurs.", 6, -14),
+    CrisisCard("c37", "Chasse royale à Fontainebleau", "Le Roi convie sa Cour pour une battue fastueuse.", 4, -9),
+    CrisisCard("c38", "Un financier véreux démasqué", "La justice royale frappe un usurier de la Cour.", 2, 22),
+    CrisisCard("c39", "Grande sécheresse des canaux de Versailles", "Les fontaines royales s'arrêtent, le peuple s'agite.", -6, -11),
 ]
 
 CARD_BY_ID = {c.id: c for c in CRISIS_DECK}
