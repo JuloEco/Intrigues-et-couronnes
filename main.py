@@ -22,8 +22,7 @@ DÉPLOIEMENT RAILWAY
    Un seul worker gunicorn (-w 1) est nécessaire : l'état des parties vit en
    mémoire (en plus d'être sauvegardé en DB à chaque coup), donc plusieurs
    workers verraient des états différents pour un même salon.
-"""
-"""
+
 Intrigues & Couronne — jeu de société politique en ligne, multijoueur,
 temps réel. Application Flask + Flask-SocketIO en un seul fichier.
 """
