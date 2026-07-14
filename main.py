@@ -23,14 +23,11 @@ DÉPLOIEMENT RAILWAY
    mémoire (en plus d'être sauvegardé en DB à chaque coup), donc plusieurs
    workers verraient des états différents pour un même salon.
 """
+"""
+Intrigues & Couronne — jeu de société politique en ligne, multijoueur,
+temps réel. Application Flask + Flask-SocketIO en un seul fichier.
+"""
 from __future__ import annotations
-
-import gevent.monkey
-gevent.monkey.patch_all()
-
-import os
-import json
-import random
 
 import os
 import json
@@ -46,10 +43,19 @@ from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, emit
 
 # ============================================================================
-# 1. DÉFINITIONS DES RÔLES
+# 1. COMPATIBILITÉ BDD & GEVENT (Pour Render / PostgreSQL)
 # ============================================================================
+_USE_POSTGRES = bool(os.environ.get("DATABASE_URL"))
+_db_lock = threading.Lock()
 
+if _USE_POSTGRES:
+    import psycopg2
+    from psycogreen.gevent import make_psycopg2_wait_callback
+    make_psycopg2_wait_callback()
 
+# ============================================================================
+# 2. DÉFINITIONS DES RÔLES
+# ============================================================================
 @dataclass(frozen=True)
 class RoleDef:
     id: str
