@@ -653,9 +653,10 @@ class GameState:
 
         elif role_id == "connetable":
             if choice == "ouvrir":
-                d["influence_delta"] = 2
+                d["influence_delta"] = 4
+                d["or_public_delta"] = 3
             else:
-                d["or_personnel_delta"] = 8
+                d["or_personnel_delta"] = 12
 
         if role_id != "connetable" and not connetable_ouvert and rng.random() < 0.25:
             steal = min(p.or_personnel, 5)
@@ -663,10 +664,32 @@ class GameState:
                 d["or_personnel_delta"] -= steal
                 d["vol_subi"] = steal
 
+        # ---- Risque réel de Démasquage sur la Voie du Fourbe ----
+        d["demasque"] = False
+        if choice == "fermer":
+            if self.garde_cible == role_id:
+                chance = 1.0  # La Garde Rapprochée du Connétable ne laisse rien passer
+            elif role_id == "connetable":
+                chance = DEMASQUAGE_CHANCE_CONNETABLE_FOURBE
+            else:
+                chance = DEMASQUAGE_CHANCE_BASE
+                chance += DEMASQUAGE_MALUS_ORDRE if connetable_ouvert else DEMASQUAGE_BONUS_ANARCHIE
+
+            if rng.random() < chance:
+                d["demasque"] = True
+
         p.or_personnel = max(0, p.or_personnel + d["or_personnel_delta"])
         p.influence = max(0, p.influence + d["influence_delta"])
         self.stabilite += d["stabilite_delta"]
         self.or_public += d["or_public_delta"]
+
+        if d["demasque"]:
+            confisque = self._sanctionner_demasquage(p)
+            d["or_confisque"] = confisque
+            self.log.append(
+                f"⚖️ {p.pseudo} ({ROLES[role_id].name}) est DÉMASQUÉ sur la Voie du Fourbe ! "
+                f"{confisque} Or confisqué, réputation entachée."
+            )
 
         return d
 
@@ -677,7 +700,9 @@ class GameState:
                 continue
             statut = sum(ROLES[r].statut_ministere for r in p.role_ids)
             roles_noms = " + ".join(ROLES[r].name for r in p.role_ids)
-            puissance = p.or_personnel + p.influence + statut * self.stabilite
+            bonus_statut = round(statut * self.stabilite / STABILITE_DIVISEUR_SCORE)
+            malus_demasquage = p.demasques * MALUS_PUISSANCE_PAR_DEMASQUAGE
+            puissance = p.or_personnel + p.influence + bonus_statut - malus_demasquage
             scores[uid] = {
                 "pseudo": p.pseudo,
                 "role": roles_noms,
@@ -685,6 +710,9 @@ class GameState:
                 "influence": p.influence,
                 "statut_ministere": statut,
                 "stabilite_finale": self.stabilite,
+                "bonus_statut": bonus_statut,
+                "demasques": p.demasques,
+                "malus_demasquage": malus_demasquage,
                 "puissance": puissance,
             }
         self.final_scores = scores
@@ -722,7 +750,10 @@ class GameState:
         return True
 
     def revoke(self, role_id: str, successor_uid: str, requester_uid: str) -> bool:
-        """Révocation royale : seul le Roi peut destituer et nommer un successeur."""
+        """Révocation royale : seul le Roi peut destituer et nommer un
+        successeur. Limitée à REVOCATIONS_MAX sur toute la partie, sauf
+        'Lettre de Cachet' bonus gagnée quand un ministre vient d'être
+        démasqué (flagrant délit)."""
         if requester_uid != self.king_uid():
             return False
         if successor_uid == self.king_uid():
@@ -730,6 +761,12 @@ class GameState:
         successor = self.players.get(successor_uid)
         if successor is None:
             return False
+
+        using_bonus = False
+        if self.revocations_used >= REVOCATIONS_MAX:
+            if not self.bonus_revocation_disponible:
+                return False
+            using_bonus = True
 
         old_uid = self.ministre_uid_for_role(role_id)
         if old_uid is None or old_uid == successor_uid:
@@ -740,10 +777,100 @@ class GameState:
         if role_id not in successor.role_ids:
             successor.role_ids.append(role_id)
 
+        if using_bonus:
+            self.bonus_revocation_disponible = False
+        else:
+            self.revocations_used += 1
+
         cumul = " (cumul de portefeuilles)" if len(successor.role_ids) > 1 else ""
+        lettre = " (Lettre de Cachet)" if using_bonus else (
+            f" [{self.revocations_used}/{REVOCATIONS_MAX} révocations royales utilisées]"
+        )
         self.log.append(
             f"👑 Le Roi destitue {self.players[old_uid].pseudo} du poste de "
-            f"{ROLES[role_id].name} ! Nommé successeur : {successor.pseudo}{cumul}."
+            f"{ROLES[role_id].name} ! Nommé successeur : {successor.pseudo}{cumul}{lettre}."
+        )
+        return True
+
+    # ---------- Pouvoirs de Cour (une fois par partie, par ministère) ----------
+
+    def peek_next_card(self) -> dict | None:
+        """Pouvoir de Cour de l'Intérieur : Le Cabinet Noir."""
+        if self.deck_position >= len(self.deck):
+            self.deck = build_shuffled_deck()
+            self.deck_position = 0
+        card = CARD_BY_ID[self.deck[self.deck_position]]
+        apercu = {
+            "titre": card.titre,
+            "texte": card.texte,
+            "stabilite_delta": card.stabilite_delta,
+            "or_public_delta": card.or_public_delta,
+        }
+        self.cabinet_noir_apercu = apercu
+        return apercu
+
+    def use_lettre_de_change(self, montant: int) -> bool:
+        """Pouvoir de Cour des Finances : convertit de l'Or personnel en Or
+        public au double, et rapporte de l'Influence."""
+        uid = self.ministre_uid_for_role("finances")
+        if uid is None:
+            return False
+        p = self.players[uid]
+        montant = max(0, min(10, montant, p.or_personnel))
+        if montant <= 0:
+            return False
+        p.or_personnel -= montant
+        self.or_public += montant * 2
+        p.influence += 5
+        self.log.append(
+            f"💰 {p.pseudo} scelle une Lettre de Change : {montant} Or personnel devient "
+            f"{montant * 2} Or public (+5 Influence)."
+        )
+        return True
+
+    def use_absolution_royale(self) -> bool:
+        """Pouvoir de Cour de l'Aumônier : efface l'effet négatif de
+        Stabilité de la dernière carte de crise résolue."""
+        if not self.log:
+            return False
+        uid = self.ministre_uid_for_role("aumonier")
+        if uid is None:
+            return False
+        # On ne peut appliquer un remède qu'à un mal identifiable : on se
+        # base sur la dernière carte réellement résolue si elle existe.
+        real_card = CARD_BY_ID.get(self.current_card_id) if self.current_card_id else None
+        malus = real_card.stabilite_delta if real_card and real_card.stabilite_delta < 0 else 0
+        if malus == 0:
+            return False
+        self.stabilite = max(0, min(STABILITE_MAX, self.stabilite - malus))
+        self.log.append(
+            f"🕊️ {self.players[uid].pseudo} accorde l'Absolution Royale : "
+            f"{abs(malus)} points de Stabilité sont restitués au Royaume."
+        )
+        return True
+
+    def use_grenier_de_reserve(self) -> bool:
+        """Pouvoir de Cour des Subsistances : protège la prochaine carte de
+        crise contre toute perte d'Or public."""
+        uid = self.ministre_uid_for_role("subsistances")
+        if uid is None:
+            return False
+        self.grenier_actif = True
+        self.log.append(f"🌾 {self.players[uid].pseudo} ouvre le Grenier de Réserve du Royaume.")
+        return True
+
+    def use_garde_rapprochee(self, cible_role_id: str) -> bool:
+        """Pouvoir de Cour du Connétable : surveillance rapprochée sur un
+        ministre pour ce cycle — démasquage automatique s'il ferme son
+        robinet."""
+        if cible_role_id not in self.active_role_ids or cible_role_id == "connetable":
+            return False
+        uid = self.ministre_uid_for_role("connetable")
+        if uid is None:
+            return False
+        self.garde_cible = cible_role_id
+        self.log.append(
+            f"🗡️ {self.players[uid].pseudo} place {ROLES[cible_role_id].name} sous Garde Rapprochée."
         )
         return True
 
@@ -768,6 +895,12 @@ class GameState:
             "winner_uid": self.winner_uid,
             "final_scores": self.final_scores,
             "host_uid": self.host_uid,
+            "revocations_used": self.revocations_used,
+            "bonus_revocation_disponible": self.bonus_revocation_disponible,
+            "pouvoirs_utilises": self.pouvoirs_utilises,
+            "grenier_actif": self.grenier_actif,
+            "garde_cible": self.garde_cible,
+            "cabinet_noir_apercu": self.cabinet_noir_apercu,
         }
 
     @staticmethod
@@ -789,6 +922,12 @@ class GameState:
         gs.winner_uid = data["winner_uid"]
         gs.final_scores = data["final_scores"]
         gs.host_uid = data["host_uid"]
+        gs.revocations_used = data.get("revocations_used", 0)
+        gs.bonus_revocation_disponible = data.get("bonus_revocation_disponible", False)
+        gs.pouvoirs_utilises = data.get("pouvoirs_utilises", {})
+        gs.grenier_actif = data.get("grenier_actif", False)
+        gs.garde_cible = data.get("garde_cible")
+        gs.cabinet_noir_apercu = data.get("cabinet_noir_apercu")
         return gs
 
 
@@ -939,10 +1078,14 @@ _sid_index: dict[str, tuple[str, str]] = {}  # sid -> (room_code, player_uid)
 
 
 def public_state(gs: GameState) -> dict:
-    """État envoyé à tous : les décisions en cours restent masquées (vote secret)."""
+    """État envoyé à tous : les décisions en cours restent masquées (vote
+    secret), et l'aperçu privé du Cabinet Noir n'est jamais diffusé à la
+    table — il est transmis uniquement au Ministre de l'Intérieur via un
+    événement séparé."""
     d = gs.to_dict()
     if gs.phase == Phase.DECISION:
         d["decisions"] = {role: True for role in gs.decisions}
+    d["cabinet_noir_apercu"] = None
     return d
 
 
@@ -957,6 +1100,8 @@ def roles_catalog() -> dict:
         } for rid, r in ROLES.items()},
         "role_order": ROLE_ORDER,
         "nb_cycles": NB_CYCLES,
+        "pouvoirs_cour": POUVOIRS_COUR,
+        "revocations_max": REVOCATIONS_MAX,
     }
 
 
@@ -1199,6 +1344,65 @@ def on_revoke(data):
         emit("action_error", {"message": "Révocation impossible (seul le Roi peut révoquer)."})
         return
     broadcast_state(gs)
+
+
+@socketio.on("use_pouvoir_cour")
+def on_use_pouvoir_cour(data):
+    info = _sid_index.get(request.sid)
+    if not info:
+        return
+    room_code, player_uid = info
+    gs = get_room(room_code)
+    if gs is None:
+        return
+
+    data = data or {}
+    role_id = data.get("role_id")
+    player = gs.players.get(player_uid)
+    if player is None or role_id not in player.role_ids:
+        emit("action_error", {"message": "Vous ne contrôlez pas ce portefeuille."})
+        return
+    if gs.pouvoirs_utilises.get(role_id):
+        emit("action_error", {"message": "Ce Pouvoir de Cour a déjà été utilisé cette partie."})
+        return
+
+    apercu_prive = None
+
+    if role_id == "interieur":
+        if gs.phase not in (Phase.DISCUSSION, Phase.DECISION):
+            emit("action_error", {"message": "Le Cabinet Noir ne peut être consulté qu'avant la résolution du cycle."})
+            return
+        apercu_prive = gs.peek_next_card()
+        ok = apercu_prive is not None
+    elif role_id == "finances":
+        montant = int(data.get("montant", 0) or 0)
+        ok = gs.use_lettre_de_change(montant)
+        if not ok:
+            emit("action_error", {"message": "Montant invalide (entre 1 et 10, dans la limite de votre Or personnel)."})
+            return
+    elif role_id == "aumonier":
+        ok = gs.use_absolution_royale()
+        if not ok:
+            emit("action_error", {"message": "Aucun malus de Stabilité récent à absoudre pour l'instant."})
+            return
+    elif role_id == "subsistances":
+        ok = gs.use_grenier_de_reserve()
+    elif role_id == "connetable":
+        cible = data.get("cible_role_id")
+        ok = gs.use_garde_rapprochee(cible)
+        if not ok:
+            emit("action_error", {"message": "Cible invalide pour la Garde Rapprochée."})
+            return
+    else:
+        return
+
+    if not ok:
+        return
+
+    gs.pouvoirs_utilises[role_id] = True
+    broadcast_state(gs)
+    if apercu_prive is not None:
+        emit("pouvoir_result", {"role_id": role_id, "apercu": apercu_prive})
 
 
 @socketio.on("send_chat")
