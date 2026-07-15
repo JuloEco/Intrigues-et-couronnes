@@ -19,12 +19,17 @@
   --vert-garde: #3D5C42; --vert-garde-clair: #557A5C;
   --ardoise: #5B5B52; --ardoise-claire: #8A8A7D;
   --danger: #7A1F2B; --succes: #3D5C42;
+  /* Palette "Louis XIV" — bleu Roi et or de Versailles, pour tout ce qui
+     touche aux Pouvoirs de Cour et aux accents royaux. */
+  --bleu-roi: #1B2E5C; --bleu-roi-clair: #2E4A8C;
+  --or-versailles: #C9A227; --or-versailles-clair: #E8C34A;
   --font-display: 'Cormorant Garamond', serif;
   --font-body: 'Crimson Pro', serif;
   --font-mono: 'JetBrains Mono', monospace;
   --radius: 3px;
   --shadow-card: 0 2px 4px rgba(36,31,26,0.15), 0 8px 24px rgba(36,31,26,0.10);
   --shadow-seal: 0 3px 6px rgba(36,31,26,0.35);
+  --shadow-versailles: 0 2px 4px rgba(27,46,92,0.20), 0 8px 24px rgba(201,162,39,0.14);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; background: var(--parchemin); color: var(--encre); font-family: var(--font-body); font-size: 17px; line-height: 1.5; }
@@ -44,6 +49,8 @@ button:disabled, .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: 
 .btn-vert:hover:not(:disabled) { background: var(--vert-garde-clair); }
 .btn-fantome { background: transparent; color: var(--encre); border: 1.5px solid var(--ardoise-claire); }
 .btn-fantome:hover:not(:disabled) { background: rgba(91,91,82,0.08); }
+.btn-versailles { background: linear-gradient(135deg, var(--bleu-roi), var(--bleu-roi-clair)); color: var(--or-versailles-clair); box-shadow: var(--shadow-versailles); border: 1px solid var(--or-versailles); }
+.btn-versailles:hover:not(:disabled) { background: linear-gradient(135deg, var(--bleu-roi-clair), var(--bleu-roi)); }
 input, textarea, select { font-family: var(--font-body); font-size: 1rem; background: var(--parchemin-clair); border: 1.5px solid var(--parchemin-ombre); border-radius: var(--radius); padding: 0.65em 0.9em; color: var(--encre); }
 input::placeholder, textarea::placeholder { color: var(--ardoise-claire); }
 ::selection { background: var(--or-clair); color: var(--encre); }
@@ -168,7 +175,15 @@ input::placeholder, textarea::placeholder { color: var(--ardoise-claire); }
 .page-regles p, .page-regles li { color: var(--encre-douce); }
 .encart-avertissement { background: rgba(122,31,43,0.08); border-left: 3px solid var(--sceau); padding: 1em 1.2em; border-radius: 2px; margin: 1.2em 0; }
 .encart-info { background: rgba(61,92,66,0.08); border-left: 3px solid var(--vert-garde); padding: 1em 1.2em; border-radius: 2px; margin: 1.2em 0; }
+.encart-versailles { background: linear-gradient(135deg, rgba(27,46,92,0.07), rgba(201,162,39,0.08)); border-left: 3px solid var(--or-versailles); padding: 1em 1.2em; border-radius: 2px; margin: 1.2em 0; }
+.encart-versailles strong { color: var(--bleu-roi); }
 .retour-accueil { display: inline-block; margin-bottom: 1.5rem; font-family: var(--font-mono); font-size: 0.85rem; }
+
+/* Pouvoirs de Cour / démasquage — éléments de jeu réutilisables */
+.pouvoir-cour-badge { display: inline-flex; align-items: center; gap: 0.35em; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; background: var(--bleu-roi); color: var(--or-versailles-clair); padding: 0.2em 0.6em; border-radius: 999px; border: 1px solid var(--or-versailles); }
+.btn-pouvoir-cour { width: 100%; margin-top: 0.6rem; font-size: 0.85rem; padding: 0.5em 0.8em; }
+.tag-demasque { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--font-mono); font-size: 0.7rem; background: rgba(122,31,43,0.14); color: var(--sceau); padding: 0.15em 0.55em; border-radius: 999px; margin-left: 0.4em; }
+.compteur-revocations { font-family: var(--font-mono); font-size: 0.78rem; color: var(--or-versailles-clair); background: rgba(27,46,92,0.4); border: 1px solid var(--or-versailles); padding: 0.2em 0.7em; border-radius: 999px; }
 </style>
 {% block extra_head %}{% endblock %}
 </head>
